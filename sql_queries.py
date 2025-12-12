@@ -1,23 +1,22 @@
-def criar_insert_sql(nome_tabela_destino: str, array_dados: list[dict]) -> str:
-    """
-    Cria um SQL INSERT para um array de dicionários com chaves iguais.
-    
-    :param nome_tabela_destino: Nome da tabela de destino no SQL SERVER. Deve incluir o nome do esquema.
-    :type nome_tabela_destino: str
-    :param array_dados: Array com os dados a serem inseridos. Os itens do array (dicionários) devem conter as mesmas chaves.
-    :type array_dados: list[dict]
-    :return: string SQL INSERT formata para inserção na tabela de destino com os dados da lista
-    :rtype: str
-    """
+import pyodbc
 
-    keys = array_dados[0].keys()
+def criar_conexao():
+    conn_str = (
+    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "SERVER=localhost\\SQLEXPRESS;"
+    "DATABASE=countries_info;"
+    "Trusted_Connection=yes;"
+    )
 
-    sql_insert = f"INSERT INTO {nome_tabela_destino} ({', '.join(keys)}) VALUES"
+    print('Conexão criada com sucesso.')
 
-    for dado in array_dados:
-        itens = dado.values()
-        sql_insert += f"\n({', '.join(itens)}),"
+    return pyodbc.connect(conn_str)
 
-    sql_insert = sql_insert[:len(sql_insert)-1] + ";"
+# função incompleta
+def inserir_dados(cursor, dados_continente, dados_linguagens, dados_monetarios, dados_totais):
+    inserir_dados_continente(cursor, dados_continente)
 
-    return sql_insert
+# insere dados da tabela de continentes, e deve retornar o id (incompleta)
+def inserir_dados_continente(cursor: pyodbc.Cursor, continent_data: dict) -> int:
+    sql_insert = "INSERT INTO country_info.continents (sName, sCode) VALUES (?, ?);"
+    cursor.execute(sql_insert, (continent_data['sName'], continent_data['sCode']))
