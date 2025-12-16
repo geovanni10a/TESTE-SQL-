@@ -16,28 +16,29 @@ CREATE SCHEMA countries;
 
 GO
 
-CREATE TABLE country_info.continents (
+-- Colocar Constraint UNIQUE nos códigos e nomes??
+CREATE TABLE [country_info].[continents] (
 	id INTEGER IDENTITY PRIMARY KEY,
-	sName VARCHAR(255) NOT NULL,
-	sCode VARCHAR(10) NOT NULL
+	sName VARCHAR(255) UNIQUE NOT NULL,
+	sCode VARCHAR(10) UNIQUE NOT NULL
 );
 
-CREATE TABLE country_info.languages (
+CREATE TABLE [country_info].[languages] (
 	id INTEGER IDENTITY PRIMARY KEY,
-	sName VARCHAR(255) NOT NULL,
-	sCode VARCHAR(10) NOT NULL
+	sName VARCHAR(255) UNIQUE NOT NULL,
+	sCode VARCHAR(10) UNIQUE NOT NULL
 );
 
-CREATE TABLE country_info.currencies (
+CREATE TABLE [country_info].[currencies] (
 	id INTEGER IDENTITY PRIMARY KEY,
 	sName VARCHAR(255) NOT NULL,
-	sCode VARCHAR(10) NOT NULL
+	sCode VARCHAR(10) UNIQUE NOT NULL
 );
 
-CREATE TABLE country_infos.countries (
+CREATE TABLE [country_info].[countries] (
 	id INTEGER IDENTITY PRIMARY KEY,
-	sName VARCHAR(255) NOT NULL,
-	sCode VARCHAR(10) NOT NULL,
+	sName VARCHAR(255) UNIQUE NOT NULL,
+	sCode VARCHAR(10) UNIQUE NOT NULL,
 	capitalCity VARCHAR(255) NOT NULL,
 	flagPath VARCHAR(200) NOT NULL,
 	phoneCode INTEGER NOT NULL,
@@ -45,9 +46,12 @@ CREATE TABLE country_infos.countries (
 	fkContinent INTEGER FOREIGN KEY REFERENCES country_info.continents(id)
 );
 
-CREATE TABLE country_infos.lang_countries (
+-- Criando tabela joint para unir countries com languages
+-- Mudar nome para fk
+CREATE TABLE [country_info].[lang_countries] (
 	countryID INTEGER FOREIGN KEY REFERENCES country_info.countries(id) ON DELETE CASCADE,
 	languageID INTEGER FOREIGN KEY REFERENCES country_info.languages(id) ON DELETE CASCADE
 );
+
 
 GO
