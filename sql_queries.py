@@ -1,6 +1,6 @@
 import pyodbc
 
-def criar_conexao():
+def criar_conexao() -> pyodbc.Connection:
     conn_str = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     "SERVER=localhost\\SQLEXPRESS;"
@@ -13,21 +13,19 @@ def criar_conexao():
     return pyodbc.connect(conn_str)
 
 # insere dados de todos os continentes
-def inserir_dados_continente(cursor, all_continent_data: dict) -> int:
+def inserir_dados_continente(cursor: pyodbc.Cursor, all_continent_data: dict) -> None:
     sql_insert = "INSERT INTO country_info.continents (sCode, sName) VALUES (?, ?);"
 
     for continent_data in all_continent_data:
         try:
             cursor.execute(sql_insert, (continent_data['sCode'], continent_data['sName']))
 
-            cursor.execute("SELECT id FROM country_info.continents WHERE sCode = ?", (continent_data['sCode']))
-
             print('Continente adicionado: ', continent_data['sName'])
         except pyodbc.IntegrityError:
-            cursor.execute("SELECT id FROM country_info.continents WHERE sCode = ?", (continent_data['sCode']))
+            print('Continente nãoadicionado: ', continent_data['sName'])
 
 # insere dados de todas as moedas
-def inserir_dados_monetarios(cursor, all_currency_data: dict) -> int:
+def inserir_dados_monetarios(cursor: pyodbc.Cursor, all_currency_data: dict) -> None:
     sql_insert = "INSERT INTO country_info.currencies (sCode, sName) VALUES (?, ?);"
 
     for currency_data in all_currency_data:
@@ -36,12 +34,11 @@ def inserir_dados_monetarios(cursor, all_currency_data: dict) -> int:
 
             print('Moeda adicionada: ', currency_data['sName'])
         except pyodbc.IntegrityError:
-            cursor.execute("SELECT id FROM country_info.currencies WHERE sCode = ?", (currency_data['sISOCode']))
+            print('Moeda não adicionada: ', currency_data['sName'])
 
 # insere dados de todas as linguagens
-def inserir_dados_linguagens(cursor, all_language_data: dict) -> list:
+def inserir_dados_linguagens(cursor: pyodbc.Cursor, all_language_data: dict) -> None:
     sql_insert = "INSERT INTO country_info.languages (sCode, sName) VALUES (?, ?);"
-    language_ids = []
 
     for language_data in all_language_data:
         try:
@@ -49,12 +46,10 @@ def inserir_dados_linguagens(cursor, all_language_data: dict) -> list:
 
             print('Língua adicionada: ', language_data['sName'])
         except pyodbc.IntegrityError:
-            cursor.execute("SELECT id FROM country_info.languages WHERE sCode = ?", (language_data['sISOCode'],))
-
-    return language_ids
+            print('Língua não adicionada: ', language_data['sName'])
 
 # insere dados de todos os países
-def inserir_dados_paises(cursor, all_country_data: dict):
+def inserir_dados_paises(cursor: pyodbc.Cursor, all_country_data: dict):
     for country_data in all_country_data:
         fk_continent = None
         fk_currency = None
@@ -91,7 +86,7 @@ def inserir_dados_paises(cursor, all_country_data: dict):
             print('País não adicionado: ', country_data['name'])
 
 # ajusta tabela joint lang_countries
-def ajustar_lang_countries(cursor, all_country_data):
+def ajustar_lang_countries(cursor: pyodbc.Cursor, all_country_data: list) -> None:
     for country in all_country_data:
 
         country_id = None
@@ -116,7 +111,7 @@ def ajustar_lang_countries(cursor, all_country_data):
             except pyodbc.IntegrityError:
                 print(f"Língua {lang['sName']} já associada ao país {country['name']}")
 
-def inserir_dados(cursor, /, full_continent_data, full_language_data, full_currency_data, full_countries_data):
+def inserir_dados(cursor: pyodbc.Cursor, /, full_continent_data: dict, full_language_data: dict, full_currency_data: dict, full_countries_data: list) -> None:
     inserir_dados_continente(cursor, full_continent_data)
     inserir_dados_monetarios(cursor, full_currency_data)
     inserir_dados_linguagens(cursor, full_language_data)
