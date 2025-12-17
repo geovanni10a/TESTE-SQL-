@@ -12,113 +12,114 @@ def criar_conexao():
 
     return pyodbc.connect(conn_str)
 
-def inserir_dados(cursor, /, dados_continente, dados_linguagens, dados_monetarios, dados_totais_pais):
-    fk_continente = inserir_dados_continente(cursor, dados_continente)
-    fk_monetario = inserir_dados_monetarios(cursor, dados_monetarios)
-    language_ids = inserir_dados_linguagens(cursor, dados_linguagens)
-
-    inserir_dados_pais(cursor, dados_totais_pais, fk_monetario, fk_continente)
-    ajustar_lang_countries(cursor, dados_totais_pais['iso_code'], language_ids)
-
-def inserir_dados_pais(cursor: pyodbc.Cursor, country_data: dict, fk_currency: int, fk_continent: int):
-    values_to_insert = {'sCode': country_data['iso_code'],
-              'sName': country_data['name'],
-              'capitalCity': country_data['capital_city'],
-              'phoneCode': country_data['phone_code'],
-              'flagPath': country_data['flag'],
-              'fkCurrency': fk_currency,
-              'fkContinent': fk_continent
-              }
-    
-
-    sql_insert = f"INSERT INTO country_info.countries ({', '.join(values_to_insert.keys())}) VALUES (?, ?, ?, ?, ?, ?, ?);"
-
-    print('País adicionado: ', country_data['name'])
-
-    try:
-        cursor.execute(sql_insert, tuple(values_to_insert.values()))
-    except pyodbc.IntegrityError as e:
-        print('País não adicionado: ', country_data['name'])
-        raise 
-
-# insere dados da tabela de continentes, e deve retornar o id do continente (incompleta)
-def inserir_dados_continente(cursor: pyodbc.Cursor, continent_data: dict) -> int:
+# insere dados de todos os continentes
+def inserir_dados_continente(cursor, all_continent_data: dict) -> int:
     sql_insert = "INSERT INTO country_info.continents (sCode, sName) VALUES (?, ?);"
-    try:
-        cursor.execute(sql_insert, (continent_data['sCode'], continent_data['sName']))
 
-        cursor.execute("SELECT id FROM country_info.continents WHERE sCode = ?", (continent_data['sCode']))
-        row = cursor.fetchone()
-        if row:
+    for continent_data in all_continent_data:
+        try:
+            cursor.execute(sql_insert, (continent_data['sCode'], continent_data['sName']))
+
+            cursor.execute("SELECT id FROM country_info.continents WHERE sCode = ?", (continent_data['sCode']))
+
             print('Continente adicionado: ', continent_data['sName'])
-            return row.id
-    except pyodbc.IntegrityError as e:
-        cursor.execute("SELECT id FROM country_info.continents WHERE sCode = ?", (continent_data['sCode']))
-        row = cursor.fetchone()
-        if row:
-            print('Continente já existente na base de dados: ', continent_data['sName'])
-            return row.id
-    
-# insere dados da tabela de currencies, e deve retornar o id do continente (incompleta)
-def inserir_dados_monetarios(cursor: pyodbc.Cursor, currency_data: dict) -> int:
+        except pyodbc.IntegrityError:
+            cursor.execute("SELECT id FROM country_info.continents WHERE sCode = ?", (continent_data['sCode']))
+
+# insere dados de todas as moedas
+def inserir_dados_monetarios(cursor, all_currency_data: dict) -> int:
     sql_insert = "INSERT INTO country_info.currencies (sCode, sName) VALUES (?, ?);"
-    try:
-        cursor.execute(sql_insert, (currency_data['sISOCode'], currency_data['sName']))
 
-        cursor.execute("SELECT id FROM country_info.currencies WHERE sCode = ?", (currency_data['sISOCode']))
-        row = cursor.fetchone()
-        if row:
-            print('Unidade Monetária adicionada: ', currency_data['sName'])
-            return row.id
-    except pyodbc.IntegrityError as e:
-        print('Currency não adicionada: ')
-        cursor.execute("SELECT id FROM country_info.currencies WHERE sCode = ?", (currency_data['sISOCode']))
-        row = cursor.fetchone()
-        if row:
-            print('Unidade Monetária já existente no banco de dados: ', currency_data['sName'])
-            return row.id
-    
-def inserir_dados_linguagens(cursor: pyodbc.Cursor, language_data: dict):
-    if len(language_data) == 0:
-        return [] 
+    for currency_data in all_currency_data:
+        try:
+            cursor.execute(sql_insert, (currency_data['sISOCode'], currency_data['sName']))
 
+            print('Moeda adicionada: ', currency_data['sName'])
+        except pyodbc.IntegrityError:
+            cursor.execute("SELECT id FROM country_info.currencies WHERE sCode = ?", (currency_data['sISOCode']))
+
+# insere dados de todas as linguagens
+def inserir_dados_linguagens(cursor, all_language_data: dict) -> list:
     sql_insert = "INSERT INTO country_info.languages (sCode, sName) VALUES (?, ?);"
+    language_ids = []
 
-    languages_ids = []
+    for language_data in all_language_data:
+        try:
+            cursor.execute(sql_insert, (language_data['sISOCode'], language_data['sName']))
+
+            print('Língua adicionada: ', language_data['sName'])
+        except pyodbc.IntegrityError:
+            cursor.execute("SELECT id FROM country_info.languages WHERE sCode = ?", (language_data['sISOCode'],))
+
+    return language_ids
+
+
+def inserir_dados_paises(cursor, all_country_data: dict):
+    for country_data in all_country_data:
+        fk_continent = None
+        fk_currency = None
+
+        # obtém fk_continent
+        cursor.execute("SELECT id FROM country_info.continents WHERE sCode = ?", (country_data['continent_code'],))
+        row = cursor.fetchone()
+        if row:
+            fk_continent = row.id
+
+        # obtém fk_currency
+        cursor.execute("SELECT id FROM country_info.currencies WHERE sCode = ?", (country_data['currency_code'],))
+        row = cursor.fetchone()
+        if row:
+            fk_currency = row.id
+
+        values_to_insert = {'sCode': country_data['iso_code'],
+                  'sName': country_data['name'],
+                  'capitalCity': country_data['capital_city'],
+                  'phoneCode': country_data['phone_code'],
+                  'flagPath': country_data['flag'],
+                  'fkCurrency': fk_currency,
+                  'fkContinent': fk_continent
+                  }
         
-    for lang in language_data:
-        try: 
-            cursor.execute(sql_insert, (lang['sISOCode'], lang['sName']))
-            cursor.execute("SELECT @@IDENTITY AS id;")
-            row = cursor.fetchone()
-            if row:
-                languages_ids.append(row.id)
-                print('Linguagem adicionada: ', lang['sName'])
-            
-        except pyodbc.IntegrityError as e:
-            print('Linguagem não adicionada: ', lang['sName'])
+
+        sql_insert = f"INSERT INTO country_info.countries ({', '.join(values_to_insert.keys())}) VALUES (?, ?, ?, ?, ?, ?, ?);"
+
+        print('País adicionado: ', country_data['name'])
+
+        try:
+            cursor.execute(sql_insert, tuple(values_to_insert.values()))
+        except pyodbc.IntegrityError:
+            print('País não adicionado: ', country_data['name'])
+
+def ajustar_lang_countries(cursor, all_country_data):
+    for country in all_country_data:
+
+        country_id = None
+        language_id = None
+
+        cursor.execute("SELECT id FROM country_info.countries WHERE sCode = ?;", (country['iso_code']))
+        row = cursor.fetchone()
+        if row:
+            country_id = row.id
+
+        for lang in country['languages']:
+
             cursor.execute("SELECT id FROM country_info.languages WHERE sCode = ?;", (lang['sISOCode']))
             row = cursor.fetchone()
             if row:
-                languages_ids.append(row.id)
-            continue
+                language_id = row.id
             
-    return languages_ids
-
-def ajustar_lang_countries(cursor: pyodbc.Cursor, country_code: str, language_ids: list):
-        if len(language_ids) == 0:
-            return
-
-        for lang_id in language_ids:
             try:
-                sql_insert = "INSERT INTO country_info.lang_countries (CountryID, languageID) VALUES ((SELECT id FROM country_info.countries WHERE sCode = ?), ?);"
-                cursor.execute(sql_insert, (country_code, lang_id))
-            except pyodbc.IntegrityError as e:
-                print(f'Linguagem com id {lang_id} já associada ao país {country_code}.')
-                continue
+                cursor.execute("INSERT INTO country_info.lang_countries (fkCountry, fkLanguage) VALUES (?, ?);",
+                                (country_id, language_id))
+                print(f"Língua {lang['sName']} associada ao país {country['name']}")
+            except pyodbc.IntegrityError:
+                print(f"Língua {lang['sName']} já associada ao país {country['name']}")
 
 
-        
+def inserir_dados(cursor, /, full_continent_data, full_language_data, full_currency_data, full_countries_data):
+    inserir_dados_continente(cursor, full_continent_data)
+    inserir_dados_monetarios(cursor, full_currency_data)
+    inserir_dados_linguagens(cursor, full_language_data)
 
-
-    
+    inserir_dados_paises(cursor, full_countries_data)
+    ajustar_lang_countries(cursor, full_countries_data)

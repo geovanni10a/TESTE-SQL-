@@ -49,8 +49,8 @@ CREATE TABLE [country_info].[countries] (
 -- Criando tabela joint para unir countries com languages
 -- Mudar nome para fk
 CREATE TABLE [country_info].[lang_countries] (
-	countryID INTEGER FOREIGN KEY REFERENCES country_info.countries(id) ON DELETE CASCADE,
-	languageID INTEGER FOREIGN KEY REFERENCES country_info.languages(id) ON DELETE CASCADE
+	fkCountry INTEGER FOREIGN KEY REFERENCES country_info.countries(id) ON DELETE CASCADE,
+	fkLanguage INTEGER FOREIGN KEY REFERENCES country_info.languages(id) ON DELETE CASCADE
 );
 
 
