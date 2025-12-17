@@ -53,7 +53,7 @@ def inserir_dados_linguagens(cursor, all_language_data: dict) -> list:
 
     return language_ids
 
-
+# insere dados de todos os países
 def inserir_dados_paises(cursor, all_country_data: dict):
     for country_data in all_country_data:
         fk_continent = None
@@ -90,6 +90,7 @@ def inserir_dados_paises(cursor, all_country_data: dict):
         except pyodbc.IntegrityError:
             print('País não adicionado: ', country_data['name'])
 
+# ajusta tabela joint lang_countries
 def ajustar_lang_countries(cursor, all_country_data):
     for country in all_country_data:
 
@@ -114,7 +115,6 @@ def ajustar_lang_countries(cursor, all_country_data):
                 print(f"Língua {lang['sName']} associada ao país {country['name']}")
             except pyodbc.IntegrityError:
                 print(f"Língua {lang['sName']} já associada ao país {country['name']}")
-
 
 def inserir_dados(cursor, /, full_continent_data, full_language_data, full_currency_data, full_countries_data):
     inserir_dados_continente(cursor, full_continent_data)
