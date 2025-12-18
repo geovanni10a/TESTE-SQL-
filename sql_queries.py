@@ -22,7 +22,7 @@ def inserir_dados_continente(cursor: pyodbc.Cursor, all_continent_data: dict) ->
 
             print('Continente adicionado: ', continent_data['sName'])
         except pyodbc.IntegrityError:
-            print('Continente nãoadicionado: ', continent_data['sName'])
+            print('Continente não adicionado: ', continent_data['sName'])
 
 # insere dados de todas as moedas
 def inserir_dados_monetarios(cursor: pyodbc.Cursor, all_currency_data: dict) -> None:
@@ -78,10 +78,9 @@ def inserir_dados_paises(cursor: pyodbc.Cursor, all_country_data: dict):
 
         sql_insert = f"INSERT INTO country_info.countries ({', '.join(values_to_insert.keys())}) VALUES (?, ?, ?, ?, ?, ?, ?);"
 
-        print('País adicionado: ', country_data['name'])
-
         try:
             cursor.execute(sql_insert, tuple(values_to_insert.values()))
+            print('País adicionado: ', country_data['name'])
         except pyodbc.IntegrityError:
             print('País não adicionado: ', country_data['name'])
 
@@ -105,13 +104,13 @@ def ajustar_lang_countries(cursor: pyodbc.Cursor, all_country_data: list) -> Non
                 language_id = row.id
             
             try:
-                cursor.execute("INSERT INTO country_info.lang_countries (fkCountry, fkLanguage) VALUES (?, ?);",
+                cursor.execute("EXEC insert_lang_countries ?, ?;",
                                 (country_id, language_id))
                 print(f"Língua {lang['sName']} associada ao país {country['name']}")
             except pyodbc.IntegrityError:
                 print(f"Língua {lang['sName']} já associada ao país {country['name']}")
 
-def inserir_dados(cursor: pyodbc.Cursor, /, full_continent_data: dict, full_language_data: dict, full_currency_data: dict, full_countries_data: list) -> None:
+def inserir_dados_db(cursor: pyodbc.Cursor, /, full_continent_data: dict, full_language_data: dict, full_currency_data: dict, full_countries_data: list) -> None:
     inserir_dados_continente(cursor, full_continent_data)
     inserir_dados_monetarios(cursor, full_currency_data)
     inserir_dados_linguagens(cursor, full_language_data)

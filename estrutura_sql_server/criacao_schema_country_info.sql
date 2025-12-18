@@ -12,10 +12,6 @@ CREATE SCHEMA country_info;
 
 GO
 
-CREATE SCHEMA countries;
-
-GO
-
 -- Colocar Constraint UNIQUE nos códigos e nomes??
 CREATE TABLE [country_info].[continents] (
 	id INTEGER IDENTITY PRIMARY KEY,
@@ -25,7 +21,7 @@ CREATE TABLE [country_info].[continents] (
 
 CREATE TABLE [country_info].[languages] (
 	id INTEGER IDENTITY PRIMARY KEY,
-	sName VARCHAR(255) UNIQUE NOT NULL,
+	sName VARCHAR(255) NOT NULL,
 	sCode VARCHAR(10) UNIQUE NOT NULL
 );
 
@@ -53,5 +49,32 @@ CREATE TABLE [country_info].[lang_countries] (
 	fkLanguage INTEGER FOREIGN KEY REFERENCES country_info.languages(id) ON DELETE CASCADE
 );
 
-
 GO
+
+-- Função para ajustar inserção de dados na tabela joint
+CREATE OR ALTER PROCEDURE insert_lang_countries
+@fkCountry INTEGER,
+@fkLanguage INTEGER
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @id_country INTEGER;
+	DECLARE @id_language INTEGER;
+
+	-- Verifica se o id do linguagem e pais existe associados em lang_countries
+	SELECT @id_language = lc.fkLanguage, @id_country = lc.fkCountry 
+	FROM country_info.lang_countries AS lc 
+	WHERE lc.fkLanguage = @fkLanguage AND lc.fkCountry = @fkCountry;
+
+	-- Se o pais e a lingua não estiverem associados, adicionar
+	IF NOT (@id_language IS NOT NULL AND @id_country IS NOT NULL) 
+	BEGIN
+		INSERT INTO country_info.lang_countries (fkCountries, fkLanguage)
+		VALUES (@fkCountry, @fkLanguage);
+	END;
+
+END;
+GO
+
+
